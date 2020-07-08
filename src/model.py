@@ -68,7 +68,7 @@ class Base:
             network=self.model, device_name=self.device
         )
 
-    def predict(self, image, request_id=0):
+    def predict(self, image, request_id=0, draw=False):
         if not isinstance(image, np.ndarray):
             raise IOError("Image not parsed correctly.")
 
@@ -78,8 +78,10 @@ class Base:
         )
         status = self.exec_network.requests[request_id].wait(-1)
         if status == 0:
-            result = self.exec_network.requests[request_id].outputs[self.output_name]
-            return self.draw_outputs(result, image)
+            pred_result = self.exec_network.requests[request_id].outputs[
+                self.output_name
+            ]
+            return self.draw_outputs(pred_result, image) if draw else pred_result
 
     def draw_outputs(self, inference_blob, image):
         """Draw bounding boxes onto the frame."""
@@ -149,23 +151,27 @@ class Base:
 
 class Face_Detection(Base):
     """Class for the Face Detection Model."""
+
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
 
 class Head_Pose_Estimation(Base):
     """Class for the Head Pose Estimation Model."""
+
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
 
 class Facial_Landmarks(Base):
     """Class for the Facial Landmarks Detection Model."""
+
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
 
 class Gaze_Estimation(Base):
     """Class for the Gaze Estimation Detection Model."""
+
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
