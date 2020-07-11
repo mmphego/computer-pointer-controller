@@ -1,23 +1,29 @@
+import abc
 import argparse
 import os
 import sys
 import time
 import subprocess
-import logging
 
 from pathlib import Path
 
 import cv2
 import numpy as np
 
+from loguru import logger
 from openvino.inference_engine import IENetwork, IECore
 
 
-logger = logging.getLogger(__name__)
+__all__ = [
+    "Face_Detection",
+    "Head_Pose_Estimation",
+    "Facial_Landmarks",
+    "Gaze_Estimation",
+]
 
 
-class Base:
-    """Base Class"""
+class Base(abc.ABC):
+    """Model Base Class"""
 
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         self.model_weights = f"{model_name}.bin"
@@ -41,6 +47,8 @@ class Base:
         self.output_shape = self.model.outputs[self.output_name].shape
         self._init_image_w = None
         self._init_image_h = None
+        self.exec_network = None
+        self.load_model()
 
     def _get_model(self):
         """Helper function for reading the network."""
@@ -64,9 +72,15 @@ class Base:
 
     def load_model(self):
         """Load the model into the plugin"""
-        self.exec_network = self._ie_core.load_network(
-            network=self.model, device_name=self.device
-        )
+        if self.exec_network is None:
+            start_time = time.time()
+            self.exec_network = self._ie_core.load_network(
+                network=self.model, device_name=self.device
+            )
+            self._model_load_time = (time.time() - start_time) * 1000
+            logger.info(
+                f"Model: {self.model_structure} took {self._model_load_time:.3f} ms to load."
+            )
 
     def predict(self, image, request_id=0, draw=False):
         if not isinstance(image, np.ndarray):
@@ -81,9 +95,29 @@ class Base:
             pred_result = self.exec_network.requests[request_id].outputs[
                 self.output_name
             ]
-            return self.draw_outputs(pred_result, image) if draw else pred_result
+            return pred_result
 
-    def draw_outputs(self, inference_blob, image):
+    @abc.abstractmethod
+    def preprocess_output(self, inference_results, image):
+        """Draw bounding boxes onto the frame."""
+        pass
+
+    def preprocess_input(self, image):
+        """Helper function for processing frame"""
+        p_frame = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
+        # Change data layout from HWC to CHW
+        p_frame = p_frame.transpose((2, 0, 1))
+        p_frame = p_frame.reshape(1, *p_frame.shape)
+        return p_frame
+
+
+class Face_Detection(Base):
+    """Class for the Face Detection Model."""
+
+    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
+        super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
+
+    def preprocess_output(self, inference_results, image):
         """Draw bounding boxes onto the frame."""
         if not (self._init_image_w and self._init_image_h):
             raise RuntimeError("Initial image width and height cannot be None.")
@@ -95,7 +129,7 @@ class Base:
         text_thickness = 1
 
         coords = []
-        for box in inference_blob[0][0]:  # Output shape is 1x1xNx7
+        for box in inference_results[0][0]:  # Output shape is 1x1xNx7
             conf = box[2]
             if conf >= self.threshold:
                 xmin = int(box[3] * self._init_image_w)
@@ -140,28 +174,14 @@ class Base:
 
         return coords, image
 
-    def preprocess_input(self, image):
-        """Helper function for processing frame"""
-        p_frame = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
-        # Change data layout from HWC to CHW
-        p_frame = p_frame.transpose((2, 0, 1))
-        p_frame = p_frame.reshape(1, *p_frame.shape)
-        return p_frame
-
-
-class Face_Detection(Base):
-    """Class for the Face Detection Model."""
-
-    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
-        super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
-
-
 class Head_Pose_Estimation(Base):
     """Class for the Head Pose Estimation Model."""
 
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
+    def preprocess_output(self, inference_results, image):
+        pass
 
 class Facial_Landmarks(Base):
     """Class for the Facial Landmarks Detection Model."""
@@ -169,9 +189,14 @@ class Facial_Landmarks(Base):
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
+    def preprocess_output(self, inference_results, image):
+        pass
 
 class Gaze_Estimation(Base):
     """Class for the Gaze Estimation Detection Model."""
 
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
+
+    def preprocess_output(self, inference_results, image):
+        pass
