@@ -102,8 +102,9 @@ class Base(abc.ABC):
         """Draw bounding boxes onto the frame."""
         pass
 
+    @staticmethod
     @abc.abstractmethod
-    def draw_output(self, coords, image):
+    def draw_output(coords, image):
         pass
 
     def preprocess_input(self, image):
@@ -137,7 +138,7 @@ class Face_Detection(Base):
                 coords.append((xmin, ymin, xmax, ymax))
         return coords, image
 
-    def draw_output(self, coords, image):
+    def draw_output(coords, image):
         label = "Person"
         bbox_color = (0, 255, 0)
         padding_size = (0.05, 0.25)
@@ -186,7 +187,7 @@ class Head_Pose_Estimation(Base):
     def preprocess_output(self, inference_results, image):
         pass
 
-    def draw_output(self,):
+    def draw_output(coords, image):
         pass
 
 
@@ -199,7 +200,7 @@ class Facial_Landmarks(Base):
     def preprocess_output(self, inference_results, image):
         pass
 
-    def draw_output(self,):
+    def draw_output(coords, image):
         pass
 
 
@@ -212,5 +213,5 @@ class Gaze_Estimation(Base):
     def preprocess_output(self, inference_results, image):
         pass
 
-    def draw_output(self,):
+    def draw_output(coords, image):
         pass
