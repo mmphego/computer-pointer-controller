@@ -26,7 +26,6 @@ class InputFeeder:
         -------
         ```
             feed=InputFeeder(input_file='video.mp4')
-            feed.load_data()
             for batch in feed.next_frame():
                 do_something(batch)
             feed.close()
@@ -106,3 +105,4 @@ class InputFeeder:
         if "image" in self._input_type:
             self.cap.release()
         cv2.destroyAllWindows()
+        logger.info("============ CleanUp! ============")
