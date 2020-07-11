@@ -102,6 +102,10 @@ class Base(abc.ABC):
         """Draw bounding boxes onto the frame."""
         pass
 
+    @abc.abstractmethod
+    def draw_output(self, coords, image):
+        pass
+
     def preprocess_input(self, image):
         """Helper function for processing frame"""
         p_frame = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
@@ -121,12 +125,6 @@ class Face_Detection(Base):
         """Draw bounding boxes onto the frame."""
         if not (self._init_image_w and self._init_image_h):
             raise RuntimeError("Initial image width and height cannot be None.")
-        label = "Person"
-        bbox_color = (0, 255, 0)
-        padding_size = (0.05, 0.25)
-        text_color = (255, 255, 255)
-        text_scale = 1.5
-        text_thickness = 1
 
         coords = []
         for box in inference_results[0][0]:  # Output shape is 1x1xNx7
@@ -137,42 +135,47 @@ class Face_Detection(Base):
                 xmax = int(box[5] * self._init_image_w)
                 ymax = int(box[6] * self._init_image_h)
                 coords.append((xmin, ymin, xmax, ymax))
-
-                cv2.rectangle(
-                    image, (xmin, ymin), (xmax, ymax,), color=bbox_color, thickness=2,
-                )
-
-                ((label_width, label_height), _) = cv2.getTextSize(
-                    label,
-                    cv2.FONT_HERSHEY_PLAIN,
-                    fontScale=text_scale,
-                    thickness=text_thickness,
-                )
-
-                cv2.rectangle(
-                    image,
-                    (xmin, ymin),
-                    (
-                        int(xmin + label_width + label_width * padding_size[0]),
-                        int(ymin + label_height + label_height * padding_size[1]),
-                    ),
-                    color=bbox_color,
-                    thickness=cv2.FILLED,
-                )
-                cv2.putText(
-                    image,
-                    label,
-                    org=(
-                        xmin,
-                        int(ymin + label_height + label_height * padding_size[1]),
-                    ),
-                    fontFace=cv2.FONT_HERSHEY_PLAIN,
-                    fontScale=text_scale,
-                    color=text_color,
-                    thickness=text_thickness,
-                )
-
         return coords, image
+
+    def draw_output(self, coords, image):
+        label = "Person"
+        bbox_color = (0, 255, 0)
+        padding_size = (0.05, 0.25)
+        text_color = (255, 255, 255)
+        text_scale = 1.5
+        text_thickness = 1
+
+        cv2.rectangle(
+            image, (xmin, ymin), (xmax, ymax,), color=bbox_color, thickness=2,
+        )
+
+        ((label_width, label_height), _) = cv2.getTextSize(
+            label,
+            cv2.FONT_HERSHEY_PLAIN,
+            fontScale=text_scale,
+            thickness=text_thickness,
+        )
+
+        cv2.rectangle(
+            image,
+            (xmin, ymin),
+            (
+                int(xmin + label_width + label_width * padding_size[0]),
+                int(ymin + label_height + label_height * padding_size[1]),
+            ),
+            color=bbox_color,
+            thickness=cv2.FILLED,
+        )
+        cv2.putText(
+            image,
+            label,
+            org=(xmin, int(ymin + label_height + label_height * padding_size[1]),),
+            fontFace=cv2.FONT_HERSHEY_PLAIN,
+            fontScale=text_scale,
+            color=text_color,
+            thickness=text_thickness,
+        )
+
 
 class Head_Pose_Estimation(Base):
     """Class for the Head Pose Estimation Model."""
@@ -183,6 +186,10 @@ class Head_Pose_Estimation(Base):
     def preprocess_output(self, inference_results, image):
         pass
 
+    def draw_output(self,):
+        pass
+
+
 class Facial_Landmarks(Base):
     """Class for the Facial Landmarks Detection Model."""
 
@@ -192,6 +199,10 @@ class Facial_Landmarks(Base):
     def preprocess_output(self, inference_results, image):
         pass
 
+    def draw_output(self,):
+        pass
+
+
 class Gaze_Estimation(Base):
     """Class for the Gaze Estimation Detection Model."""
 
@@ -199,4 +210,7 @@ class Gaze_Estimation(Base):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
     def preprocess_output(self, inference_results, image):
+        pass
+
+    def draw_output(self,):
         pass
