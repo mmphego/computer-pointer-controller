@@ -125,6 +125,7 @@ def main(args):
     )
     facial_landmarks = Facial_Landmarks(args.facial_landmarks_model, device=args.device)
     gaze_estimation = Gaze_Estimation(args.gaze_model, device=args.device)
+
     model_load_time = (
         face_detection._model_load_time
         + head_pose_estimation._model_load_time
@@ -132,6 +133,14 @@ def main(args):
         + gaze_estimation._model_load_time
     ) / 1000
     logger.info(f"Total time taken to load all the models: {model_load_time:.2f} secs.")
+    video_feed = InputFeeder(input_file=args.input)
+    import IPython; globals().update(locals()); IPython.embed(header='Python Debugger')
+
+    # feed.load_data()
+    # for batch in feed.next_batch():
+    #     do_something(batch)
+    # feed.close()
+
 
 
 if __name__ == "__main__":
