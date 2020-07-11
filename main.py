@@ -136,11 +136,9 @@ def main(args):
 
     video_feed = InputFeeder(input_file=args.input)
 
-    # feed.load_data()
-    # for batch in feed.next_batch():
-    #     do_something(batch)
-    # feed.close()
-
+    for frame in video_feed.next_frame():
+        video_feed.show(frame)
+    video_feed.close()
 
 
 if __name__ == "__main__":

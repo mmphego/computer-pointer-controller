@@ -27,7 +27,7 @@ class InputFeeder:
         ```
             feed=InputFeeder(input_file='video.mp4')
             feed.load_data()
-            for batch in feed.next_batch():
+            for batch in feed.next_frame():
                 do_something(batch)
             feed.close()
         ```
@@ -71,6 +71,9 @@ class InputFeeder:
     def fps(self):
         return int(self.cap.get(cv2.CAP_PROP_FPS))
 
+    def show(self, frame, frame_name="video"):
+        cv2.imshow(frame_name, frame)
+
     def write_video(self, output_path=".", filename="output_video.mp4"):
         out_video = cv2.VideoWriter(
             os.path.join(output_path, filename),
@@ -81,7 +84,7 @@ class InputFeeder:
         )
         return out_video
 
-    def next_batch(self, quit_key="q"):
+    def next_frame(self, quit_key="q"):
         """Returns the next image from either a video file or webcam."""
         while self.cap.isOpened():
             flag = False
@@ -100,5 +103,6 @@ class InputFeeder:
 
     def close(self):
         """Closes the VideoCapture."""
-        if not self.input_type == "image":
+        if "image" in self._input_type:
             self.cap.release()
+        cv2.destroyAllWindows()
