@@ -81,12 +81,22 @@ class InputFeeder:
         )
         return out_video
 
-    def next_batch(self):
+    def next_batch(self, quit_key="q"):
         """Returns the next image from either a video file or webcam."""
-        while True:
-            for _ in range(10):
-                _, frame = self.cap.read()
+        while self.cap.isOpened():
+            flag = False
+            for _ in range(1):
+                flag, frame = self.cap.read()
+
+            if not flag:
+                    break
             yield frame
+
+            key = cv2.waitKey(1) & 0xFF
+            # if `quit_key` was pressed, break from the loop
+            if key == ord(quit_key):
+                break
+
 
     def close(self):
         """Closes the VideoCapture."""

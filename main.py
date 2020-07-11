@@ -133,8 +133,8 @@ def main(args):
         + gaze_estimation._model_load_time
     ) / 1000
     logger.info(f"Total time taken to load all the models: {model_load_time:.2f} secs.")
+
     video_feed = InputFeeder(input_file=args.input)
-    import IPython; globals().update(locals()); IPython.embed(header='Python Debugger')
 
     # feed.load_data()
     # for batch in feed.next_batch():
