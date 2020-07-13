@@ -109,7 +109,7 @@ class Base(ABC):
             predict_end_time = float(time.time() - predict_start_time) * 1000
             if draw:
                 bbox, _ = self.preprocess_output(pred_result, image, show_bbox=draw)
-            return (predict_end_time, pred_result, bbox)
+            return (predict_end_time, bbox)
 
     @abstractmethod
     def preprocess_output(self, inference_results, image, show_bbox=False):
@@ -257,13 +257,14 @@ class Facial_Landmarks(Base):
         }
         if show_bbox:
             self.draw_output(image, eyes_coords)
-        return eyes_coords
+        return eyes_coords, image
 
     @staticmethod
     def draw_output(image, eyes_coords, radius=10, color=(0, 0, 255), thickness=2):
         """Draw a circle around ROI"""
         for eye, coords in eyes_coords.items():
             cv2.circle(image, (coords[0], coords[1]), radius, color, thickness)
+
 
 class Head_Pose_Estimation(Base):
     """Class for the Head Pose Estimation Model."""
