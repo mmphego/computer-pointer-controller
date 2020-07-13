@@ -78,11 +78,13 @@ class InputFeeder:
             self._progress_bar = tqdm(total=int(self.video_len - self.fps + 1))
         return self._progress_bar
 
-    def resize(self,frame):
-        return cv2.resize(frame, (self.source_width - 200, self.source_height - 200))
+    def resize(self, frame, height=None, width=None):
+        if (height and width) is None:
+            width, height = (self.source_width - 200, self.source_height - 200)
+        return cv2.resize(frame, (width, height))
 
     def show(self, frame, frame_name="video"):
-        cv2.imshow(frame_name, self.resize(frame))
+        cv2.imshow(frame_name, frame)
 
     def write_video(self, output_path=".", filename="output_video.mp4"):
         out_video = cv2.VideoWriter(

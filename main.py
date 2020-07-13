@@ -11,8 +11,8 @@ mmphego/intel-openvino \
     bash -c "source /opt/intel/openvino/bin/setupvars.sh && \
         python main.py \
             --face-model models/face-detection-adas-binary-0001 \
+            --facial-landmarks-model models/landmarks-regression-retail-0009 \
             --head-pose-model models/head-pose-estimation-adas-0001 \
-            --facial-landmarks-model models/face-detection-adas-binary-0001 \
             --gaze-model models/gaze-estimation-adas-0002 \
             --input resources/demo.mp4";
 """
@@ -117,13 +117,19 @@ def main(args):
     mouse_controller = MouseController(
         precision=args.mouse_precision, speed=args.mouse_speed
     )
+    video_feed = InputFeeder(input_file=args.input)
+
     face_detection = Face_Detection(
-        args.face_model, device=args.device, threshold=args.prob_threshold
+        model_name=args.face_model,
+        source_width=video_feed.source_width,
+        source_height=video_feed.source_height,
+        device=args.device,
+        threshold=args.prob_threshold,
     )
+    facial_landmarks = Facial_Landmarks(args.facial_landmarks_model, device=args.device)
     head_pose_estimation = Head_Pose_Estimation(
         args.head_pose_model, device=args.device
     )
-    facial_landmarks = Facial_Landmarks(args.facial_landmarks_model, device=args.device)
     gaze_estimation = Gaze_Estimation(args.gaze_model, device=args.device)
 
     model_load_time = (
@@ -134,19 +140,38 @@ def main(args):
     ) / 1000
     logger.info(f"Total time taken to load all the models: {model_load_time:.2f} secs.")
 
-    video_feed = InputFeeder(input_file=args.input)
-
-    # Add source width and height for face detection.
-    face_detection._init_image_w = video_feed.source_width
-    face_detection._init_image_h = video_feed.source_height
-
     for frame in video_feed.next_frame():
-        predict_end_time, pred_result = face_detection.predict(frame,draw=True)
-        text = f"Inference time: {predict_end_time:.2f}ms"
-        face_detection.add_text(text, frame, (15, face_detection._init_image_h - 50))
+        predict_end_time, _, face_bboxes = face_detection.predict(frame, draw=True)
+        text = f"Face Detection Inference time: {predict_end_time:.3f} s"
+        face_detection.add_text(text, frame, (15, video_feed.source_height - 80))
+
+        if face_bboxes:
+            for face_bbox in face_bboxes:
+                # Useful resource: https://www.pyimagesearch.com/2018/09/24/opencv-face-recognition/
+
+                # Face bounding box coordinates cropped from the face detection inference
+                # are face_bboxes i.e `xmin, ymin, xmax, ymax`
+                # Therefore the face can be cropped by:
+                # frame[face_bbox[1]:face_bbox[3], face_bbox[0]:face_bbox[2]]
+
+                # extract the face ROI
+                (x, y, w, h) = face_bbox
+                face = frame[y:h, x:w]
+                (face_height, face_width) = face.shape[:2]
+                #  video_feed.show(frame[y:h, x:w], "face")
+
+                # ensure the face width and height are sufficiently large
+                if face_height < 20 or face_width < 20:
+                    continue
+
+                predict_end_time, _, landmarks_bboxes = facial_landmarks.predict(face)
+                text = f"Facial Landmarks Est. Inference time: {predict_end_time:.3f} s"
+                facial_landmarks.add_text(
+                    text, frame, (15, video_feed.source_height - 60)
+                )
 
         if args.debug:
-            video_feed.show(frame)
+            video_feed.show(video_feed.resize(frame))
 
     video_feed.close()
 

@@ -25,7 +25,15 @@ __all__ = [
 class Base(abc.ABC):
     """Model Base Class"""
 
-    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
+    def __init__(
+        self,
+        model_name,
+        source_width=None,
+        source_height=None,
+        device="CPU",
+        threshold=0.60,
+        extensions=None,
+    ):
         self.model_weights = f"{model_name}.bin"
         self.model_structure = f"{model_name}.xml"
         assert (
@@ -45,8 +53,8 @@ class Base(abc.ABC):
         self.input_shape = self.model.inputs[self.input_name].shape
         self.output_name = next(iter(self.model.outputs))
         self.output_shape = self.model.outputs[self.output_name].shape
-        self._init_image_w = None
-        self._init_image_h = None
+        self._init_image_w = source_width
+        self._init_image_h = source_height
         self.exec_network = None
         self.load_model()
 
@@ -91,15 +99,16 @@ class Base(abc.ABC):
             request_id=request_id, inputs={self.input_name: p_image}
         )
         status = self.exec_network.requests[request_id].wait(-1)
+        bbox = None
         if status == 0:
             predict_start_time = time.time()
             pred_result = self.exec_network.requests[request_id].outputs[
                 self.output_name
             ]
-            predict_end_time = (time.time() - predict_start_time) * 1000
+            predict_end_time = float(time.time() - predict_start_time) * 1000
             if draw:
-                self.preprocess_output(pred_result, image, show_bbox=draw)
-            return (predict_end_time, pred_result)
+                bbox, _ = self.preprocess_output(pred_result, image, show_bbox=draw)
+            return (predict_end_time, pred_result, bbox)
 
     @abc.abstractmethod
     def preprocess_output(self, inference_results, image, show_bbox=False):
@@ -128,8 +137,18 @@ class Base(abc.ABC):
 class Face_Detection(Base):
     """Class for the Face Detection Model."""
 
-    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
-        super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
+    def __init__(
+        self,
+        model_name,
+        source_width=None,
+        source_height=None,
+        device="CPU",
+        threshold=0.60,
+        extensions=None,
+    ):
+        super().__init__(
+            model_name, source_width, source_height, device, threshold, extensions,
+        )
 
     def preprocess_output(self, inference_results, image, show_bbox=False):
         """Draw bounding boxes onto the frame."""
@@ -199,8 +218,18 @@ class Face_Detection(Base):
 class Head_Pose_Estimation(Base):
     """Class for the Head Pose Estimation Model."""
 
-    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
-        super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
+    def __init__(
+        self,
+        model_name,
+        source_width=None,
+        source_height=None,
+        device="CPU",
+        threshold=0.60,
+        extensions=None,
+    ):
+        super().__init__(
+            model_name, source_width, source_height, device, threshold, extensions,
+        )
 
     def preprocess_output(self, inference_results, image):
         pass
@@ -212,8 +241,18 @@ class Head_Pose_Estimation(Base):
 class Facial_Landmarks(Base):
     """Class for the Facial Landmarks Detection Model."""
 
-    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
-        super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
+    def __init__(
+        self,
+        model_name,
+        source_width=None,
+        source_height=None,
+        device="CPU",
+        threshold=0.60,
+        extensions=None,
+    ):
+        super().__init__(
+            model_name, source_width, source_height, device, threshold, extensions,
+        )
 
     def preprocess_output(self, inference_results, image):
         pass
@@ -225,8 +264,18 @@ class Facial_Landmarks(Base):
 class Gaze_Estimation(Base):
     """Class for the Gaze Estimation Detection Model."""
 
-    def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
-        super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
+    def __init__(
+        self,
+        model_name,
+        source_width=None,
+        source_height=None,
+        device="CPU",
+        threshold=0.60,
+        extensions=None,
+    ):
+        super().__init__(
+            model_name, source_width, source_height, device, threshold, extensions,
+        )
 
     def preprocess_output(self, inference_results, image):
         pass
