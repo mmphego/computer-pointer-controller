@@ -137,7 +137,9 @@ def main(args):
     video_feed = InputFeeder(input_file=args.input)
 
     for frame in video_feed.next_frame():
-        video_feed.show(frame)
+        if args.debug:
+            video_feed.show(frame)
+
     video_feed.close()
 
 

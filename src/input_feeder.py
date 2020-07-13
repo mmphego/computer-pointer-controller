@@ -2,6 +2,7 @@ import mimetypes
 import os
 
 import cv2
+from tqdm import tqdm
 
 from loguru import logger
 from numpy import ndarray
@@ -38,6 +39,7 @@ class InputFeeder:
             assert isinstance(self._input_type, str)
         except AssertionError:
             self._input_type = ""
+        self._progress_bar = None
         self.load_data()
 
     def load_data(self):
@@ -70,6 +72,12 @@ class InputFeeder:
     def fps(self):
         return int(self.cap.get(cv2.CAP_PROP_FPS))
 
+    @property
+    def progress_bar(self):
+        if not self._progress_bar:
+            self._progress_bar = tqdm(total=int(self.video_len - self.fps + 1))
+        return self._progress_bar
+
     def show(self, frame, frame_name="video"):
         cv2.imshow(frame_name, frame)
 
@@ -86,6 +94,7 @@ class InputFeeder:
     def next_frame(self, quit_key="q"):
         """Returns the next image from either a video file or webcam."""
         while self.cap.isOpened():
+            self.progress_bar.update(1)
             flag = False
             for _ in range(1):
                 flag, frame = self.cap.read()
@@ -104,5 +113,7 @@ class InputFeeder:
         """Closes the VideoCapture."""
         if "image" in self._input_type:
             self.cap.release()
+        if self.progress_bar:
+            self.progress_bar.close()
         cv2.destroyAllWindows()
         logger.info("============ CleanUp! ============")
