@@ -141,8 +141,6 @@ def main(args):
     logger.info(f"Total time taken to load all the models: {model_load_time:.2f} secs.")
 
     for frame in video_feed.next_frame():
-        if args.debug:
-            video_feed.show(video_feed.resize(frame))
 
         predict_end_time, face_bboxes = face_detection.predict(frame, draw=True)
         text = f"Face Detection Inference time: {predict_end_time:.3f} s"
@@ -172,6 +170,11 @@ def main(args):
                 facial_landmarks.add_text(
                     text, frame, (15, video_feed.source_height - 60)
                 )
+
+
+
+        if args.debug:
+            video_feed.show(video_feed.resize(frame))
 
     video_feed.close()
 
