@@ -260,7 +260,7 @@ class Facial_Landmarks(Base):
         return eyes_coords
 
     @staticmethod
-    def draw_output(image, eyes_coords, radius=10, color=(255, 0, 0), thickness=2):
+    def draw_output(image, eyes_coords, radius=10, color=(0, 0, 255), thickness=2):
         """Draw a circle around ROI"""
         for eye, coords in eyes_coords.items():
             cv2.circle(image, (coords[0], coords[1]), radius, color, thickness)
