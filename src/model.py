@@ -1,14 +1,15 @@
-import abc
 import argparse
 import os
 import sys
 import time
 import subprocess
 
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 from loguru import logger
 from openvino.inference_engine import IENetwork, IECore
@@ -22,7 +23,7 @@ __all__ = [
 ]
 
 
-class Base(abc.ABC):
+class Base(ABC):
     """Model Base Class"""
 
     def __init__(
@@ -110,19 +111,26 @@ class Base(abc.ABC):
                 bbox, _ = self.preprocess_output(pred_result, image, show_bbox=draw)
             return (predict_end_time, pred_result, bbox)
 
-    @abc.abstractmethod
+    @abstractmethod
     def preprocess_output(self, inference_results, image, show_bbox=False):
         """Draw bounding boxes onto the frame."""
-        pass
+        raise NotImplementedError("Please Implement this method")
 
     @staticmethod
-    @abc.abstractmethod
-    def draw_output(image,):
-        pass
+    @abstractmethod
+    def draw_output(image):
+        raise NotImplementedError("Please Implement this method")
 
-    def add_text(self, text, frame, position, font_size=0.75, color=(255, 255, 255)):
+    @staticmethod
+    def plot_frame(image):
+        """Helper function for finding image coordinates/px"""
+        img = image[:, :, 0]
+        plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        plt.show()
+
+    def add_text(self, text, image, position, font_size=0.75, color=(255, 255, 255)):
         cv2.putText(
-            frame, text, position, cv2.FONT_HERSHEY_COMPLEX, font_size, color, 1,
+            image, text, position, cv2.FONT_HERSHEY_COMPLEX, font_size, color, 1,
         )
 
     def preprocess_input(self, image):
@@ -151,7 +159,7 @@ class Face_Detection(Base):
         )
 
     def preprocess_output(self, inference_results, image, show_bbox=False):
-        """Draw bounding boxes onto the frame."""
+        """Draw bounding boxes onto the Face Detection frame."""
         if not (self._init_image_w and self._init_image_h):
             raise RuntimeError("Initial image width and height cannot be None.")
 
@@ -215,8 +223,8 @@ class Face_Detection(Base):
         )
 
 
-class Head_Pose_Estimation(Base):
-    """Class for the Head Pose Estimation Model."""
+class Facial_Landmarks(Base):
+    """Class for the Facial Landmarks Detection Model."""
 
     def __init__(
         self,
@@ -231,15 +239,34 @@ class Head_Pose_Estimation(Base):
             model_name, source_width, source_height, device, threshold, extensions,
         )
 
-    def preprocess_output(self, inference_results, image):
-        pass
+    def preprocess_output(self, inference_results, image, show_bbox=False):
+        """Draw bounding boxes onto the Facial Landmarks frame."""
+        # If using model: https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html
+        flattened_predictions = np.vstack(inference_results).ravel()
+        eyes_coords = flattened_predictions[:4]
+        h, w = image.shape[:2]
 
-    def draw_output(coords, image):
-        pass
+        left_eye_x_coord = int(eyes_coords[0] * w)
+        left_eye_y_coord = int(eyes_coords[1] * h)
+        right_eye_x_coord = int(eyes_coords[2] * w)
+        right_eye_y_coord = int(eyes_coords[3] * h)
 
+        eyes_coords = {
+            "left_eye_point": (left_eye_x_coord, left_eye_y_coord),
+            "right_eye_point": (right_eye_x_coord, right_eye_y_coord),
+        }
+        if show_bbox:
+            self.draw_output(image, eyes_coords)
+        return eyes_coords
 
-class Facial_Landmarks(Base):
-    """Class for the Facial Landmarks Detection Model."""
+    @staticmethod
+    def draw_output(image, eyes_coords, radius=10, color=(255, 0, 0), thickness=2):
+        """Draw a circle around ROI"""
+        for eye, coords in eyes_coords.items():
+            cv2.circle(image, (coords[0], coords[1]), radius, color, thickness)
+
+class Head_Pose_Estimation(Base):
+    """Class for the Head Pose Estimation Model."""
 
     def __init__(
         self,

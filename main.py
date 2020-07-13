@@ -164,7 +164,7 @@ def main(args):
                 if face_height < 20 or face_width < 20:
                     continue
 
-                predict_end_time, _, landmarks_bboxes = facial_landmarks.predict(face)
+                predict_end_time, _, landmarks_bboxes = facial_landmarks.predict(face, draw=True)
                 text = f"Facial Landmarks Est. Inference time: {predict_end_time:.3f} s"
                 facial_landmarks.add_text(
                     text, frame, (15, video_feed.source_height - 60)
