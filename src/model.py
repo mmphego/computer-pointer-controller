@@ -108,7 +108,7 @@ class Base(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def draw_output(image, ):
+    def draw_output(image,):
         pass
 
     def add_text(self, text, frame, position, font_size=0.75, color=(255, 255, 255)):
@@ -150,13 +150,19 @@ class Face_Detection(Base):
         return coords, image
 
     @staticmethod
-    def draw_output(image, xmin, ymin, xmax, ymax):
-        label = "Person's Face"
-        bbox_color = (0, 255, 0)
-        padding_size = (0.05, 0.25)
-        text_color = (255, 255, 255)
-        text_scale = 1.5
-        text_thickness = 1
+    def draw_output(
+        image,
+        xmin,
+        ymin,
+        xmax,
+        ymax,
+        label="Person's Face",
+        bbox_color=(0, 255, 0),
+        padding_size=(0.05, 0.25),
+        text_color=(255, 255, 255),
+        text_scale=2,
+        text_thickness=2,
+    ):
 
         cv2.rectangle(
             image, (xmin, ymin), (xmax, ymax,), color=bbox_color, thickness=2,
