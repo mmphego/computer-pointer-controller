@@ -136,7 +136,15 @@ def main(args):
 
     video_feed = InputFeeder(input_file=args.input)
 
+    # Add source width and height for face detection.
+    face_detection._init_image_w = video_feed.source_width
+    face_detection._init_image_h = video_feed.source_height
+
     for frame in video_feed.next_frame():
+        predict_end_time, pred_result = face_detection.predict(frame,draw=True)
+        text = f"Inference time: {predict_end_time:.2f}ms"
+        face_detection.add_text(text, frame, (15, face_detection._init_image_h - 50))
+
         if args.debug:
             video_feed.show(frame)
 

@@ -92,20 +92,29 @@ class Base(abc.ABC):
         )
         status = self.exec_network.requests[request_id].wait(-1)
         if status == 0:
+            predict_start_time = time.time()
             pred_result = self.exec_network.requests[request_id].outputs[
                 self.output_name
             ]
-            return pred_result
+            predict_end_time = (time.time() - predict_start_time) * 1000
+            if draw:
+                self.preprocess_output(pred_result, image, show_bbox=draw)
+            return (predict_end_time, pred_result)
 
     @abc.abstractmethod
-    def preprocess_output(self, inference_results, image):
+    def preprocess_output(self, inference_results, image, show_bbox=False):
         """Draw bounding boxes onto the frame."""
         pass
 
     @staticmethod
     @abc.abstractmethod
-    def draw_output(coords, image):
+    def draw_output(image, ):
         pass
+
+    def add_text(self, text, frame, position, font_size=0.75, color=(255, 255, 255)):
+        cv2.putText(
+            frame, text, position, cv2.FONT_HERSHEY_COMPLEX, font_size, color, 1,
+        )
 
     def preprocess_input(self, image):
         """Helper function for processing frame"""
@@ -122,7 +131,7 @@ class Face_Detection(Base):
     def __init__(self, model_name, device="CPU", threshold=0.60, extensions=None):
         super().__init__(model_name, device="CPU", threshold=0.60, extensions=None)
 
-    def preprocess_output(self, inference_results, image):
+    def preprocess_output(self, inference_results, image, show_bbox=False):
         """Draw bounding boxes onto the frame."""
         if not (self._init_image_w and self._init_image_h):
             raise RuntimeError("Initial image width and height cannot be None.")
@@ -136,10 +145,13 @@ class Face_Detection(Base):
                 xmax = int(box[5] * self._init_image_w)
                 ymax = int(box[6] * self._init_image_h)
                 coords.append((xmin, ymin, xmax, ymax))
+                if show_bbox:
+                    self.draw_output(image, xmin, ymin, xmax, ymax)
         return coords, image
 
-    def draw_output(coords, image):
-        label = "Person"
+    @staticmethod
+    def draw_output(image, xmin, ymin, xmax, ymax):
+        label = "Person's Face"
         bbox_color = (0, 255, 0)
         padding_size = (0.05, 0.25)
         text_color = (255, 255, 255)

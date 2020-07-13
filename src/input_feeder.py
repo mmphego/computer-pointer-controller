@@ -78,8 +78,11 @@ class InputFeeder:
             self._progress_bar = tqdm(total=int(self.video_len - self.fps + 1))
         return self._progress_bar
 
+    def resize(self,frame):
+        return cv2.resize(frame, (self.source_width - 200, self.source_height - 200))
+
     def show(self, frame, frame_name="video"):
-        cv2.imshow(frame_name, frame)
+        cv2.imshow(frame_name, self.resize(frame))
 
     def write_video(self, output_path=".", filename="output_video.mp4"):
         out_video = cv2.VideoWriter(
@@ -100,14 +103,13 @@ class InputFeeder:
                 flag, frame = self.cap.read()
 
             if not flag:
-                    break
+                break
             yield frame
 
             key = cv2.waitKey(1) & 0xFF
             # if `quit_key` was pressed, break from the loop
             if key == ord(quit_key):
                 break
-
 
     def close(self):
         """Closes the VideoCapture."""
