@@ -80,7 +80,7 @@ class InputFeeder:
 
     def resize(self, frame, height=None, width=None):
         if (height and width) is None:
-            width, height = (self.source_width - 200, self.source_height - 200)
+            width, height = (self.source_width//2, self.source_height//2)
         return cv2.resize(frame, (width, height))
 
     def show(self, frame, frame_name="video"):
