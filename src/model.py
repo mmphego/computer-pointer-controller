@@ -1,5 +1,6 @@
 import argparse
 import os
+import math
 import sys
 import time
 import subprocess
@@ -21,6 +22,10 @@ __all__ = [
     "Facial_Landmarks",
     "Gaze_Estimation",
 ]
+
+
+class InvalidModel(Exception):
+    pass
 
 
 class Base(ABC):
@@ -53,11 +58,18 @@ class Base(ABC):
         self.input_name = next(iter(self.model.inputs))
         self.input_shape = self.model.inputs[self.input_name].shape
         self.output_name = next(iter(self.model.outputs))
+        self._output_shape = None
         self.output_shape = self.model.outputs[self.output_name].shape
         self._init_image_w = source_width
         self._init_image_h = source_height
         self.exec_network = None
         self.load_model()
+
+    # @property
+    # def output_shape(self):
+    #     if not self._output_shape:
+    #         self._output_shape =
+    #     return self._output_shape
 
     def _get_model(self):
         """Helper function for reading the network."""
@@ -91,7 +103,7 @@ class Base(ABC):
                 f"Model: {self.model_structure} took {self._model_load_time:.3f} ms to load."
             )
 
-    def predict(self, image, request_id=0, draw=False):
+    def predict(self, image, request_id=0, show_bbox=False):
         if not isinstance(image, np.ndarray):
             raise IOError("Image not parsed correctly.")
 
@@ -100,15 +112,17 @@ class Base(ABC):
             request_id=request_id, inputs={self.input_name: p_image}
         )
         status = self.exec_network.requests[request_id].wait(-1)
-        bbox = None
         if status == 0:
             predict_start_time = time.time()
-            pred_result = self.exec_network.requests[request_id].outputs[
-                self.output_name
-            ]
+            pred_result = []
+            for output_name, data_ptr in self.model.outputs.items():
+                pred_result.append(
+                    self.exec_network.requests[request_id].outputs[output_name]
+                )
             predict_end_time = float(time.time() - predict_start_time) * 1000
-            if draw:
-                bbox, _ = self.preprocess_output(pred_result, image, show_bbox=draw)
+            bbox, _ = self.preprocess_output(
+                pred_result, image, show_bbox=show_bbox
+            )
             return (predict_end_time, bbox)
 
     @abstractmethod
@@ -162,6 +176,8 @@ class Face_Detection(Base):
         """Draw bounding boxes onto the Face Detection frame."""
         if not (self._init_image_w and self._init_image_h):
             raise RuntimeError("Initial image width and height cannot be None.")
+        if len(inference_results) == 1:
+            inference_results = inference_results[0]
 
         coords = []
         for box in inference_results[0][0]:  # Output shape is 1x1xNx7
@@ -282,11 +298,86 @@ class Head_Pose_Estimation(Base):
             model_name, source_width, source_height, device, threshold, extensions,
         )
 
-    def preprocess_output(self, inference_results, image):
-        pass
+    def preprocess_output(self, inference_results, image, show_bbox):
+        """
+        Estimate the Head Pose on a cropped face.
 
+        Example
+        -------
+        Model: head-pose-estimation-adas-0001
+
+            Output layer names in Inference Engine format:
+
+            name: "angle_y_fc", shape: [1, 1] - Estimated yaw (in degrees).
+            name: "angle_p_fc", shape: [1, 1] - Estimated pitch (in degrees).
+            name: "angle_r_fc", shape: [1, 1] - Estimated roll (in degrees).
+
+        """
+        if len(inference_results) != 3:
+            msg = (
+                f"The model:{self.model_structure} does not contain expected output "
+                "shape as per the docs."
+            )
+            self.logger.error(msg)
+            raise InvalidModel(msg)
+
+        output_layer_names = ["yaw", "pitch", "roll"]
+        flattened_predictions = np.vstack(inference_results).ravel()
+        head_pose_angles = dict(zip(output_layer_names, flattened_predictions))
+        if show_bbox:
+            self.draw_output(head_pose_angles, image)
+
+        return head_pose_angles, image
+
+    @staticmethod
     def draw_output(coords, image):
-        pass
+        """Draw head pose estimation on frame.
+
+        Ref: https://github.com/natanielruiz/deep-head-pose/blob/master/code/utils.py#L86+L117
+        """
+        yaw, pitch, roll = coords.values()
+
+        pitch = pitch * np.pi / 180
+        yaw = -(yaw * np.pi / 180)
+        roll = roll * np.pi / 180
+
+        height, width = image.shape[:2]
+        tdx = width / 2
+        tdy = height / 2
+        size = 1000
+
+        # X-Axis pointing to right. drawn in red
+        x1 = size * (math.cos(yaw) * math.cos(roll)) + tdx
+        y1 = (
+            size
+            * (
+                math.cos(pitch) * math.sin(roll)
+                + math.cos(roll) * math.sin(pitch) * math.sin(yaw)
+            )
+            + tdy
+        )
+
+        # Y-Axis | drawn in green
+        #        v
+        x2 = size * (-math.cos(yaw) * math.sin(roll)) + tdx
+        y2 = (
+            size
+            * (
+                math.cos(pitch) * math.cos(roll)
+                - math.sin(pitch) * math.sin(yaw) * math.sin(roll)
+            )
+            + tdy
+        )
+
+        # Z-Axis (out of the screen) drawn in blue
+        x3 = size * (math.sin(yaw)) + tdx
+        y3 = size * (-math.cos(yaw) * math.sin(pitch)) + tdy
+
+        cv2.line(image, (int(tdx), int(tdy)), (int(x1), int(y1)), (0, 0, 255), 3)
+        cv2.line(image, (int(tdx), int(tdy)), (int(x2), int(y2)), (0, 255, 0), 3)
+        cv2.line(image, (int(tdx), int(tdy)), (int(x3), int(y3)), (255, 0, 0), 2)
+
+        return image
 
 
 class Gaze_Estimation(Base):
@@ -305,8 +396,9 @@ class Gaze_Estimation(Base):
             model_name, source_width, source_height, device, threshold, extensions,
         )
 
-    def preprocess_output(self, inference_results, image):
+    def preprocess_output(self, inference_results, image, show_bbox):
         pass
 
+    @staticmethod
     def draw_output(coords, image):
         pass

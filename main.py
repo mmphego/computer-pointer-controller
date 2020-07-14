@@ -142,7 +142,7 @@ def main(args):
 
     for frame in video_feed.next_frame():
 
-        predict_end_time, face_bboxes = face_detection.predict(frame, draw=True)
+        predict_end_time, face_bboxes = face_detection.predict(frame, show_bbox=True)
         text = f"Face Detection Inference time: {predict_end_time:.3f} s"
         face_detection.add_text(text, frame, (15, video_feed.source_height - 80))
 
@@ -165,13 +165,22 @@ def main(args):
                 if face_height < 20 or face_width < 20:
                     continue
 
-                predict_end_time, eyes_coords = facial_landmarks.predict(face, draw=True)
+                predict_end_time, eyes_coords = facial_landmarks.predict(
+                    face, show_bbox=True
+                )
                 text = f"Facial Landmarks Est. Inference time: {predict_end_time:.3f} s"
                 facial_landmarks.add_text(
                     text, frame, (15, video_feed.source_height - 60)
                 )
 
-
+                predict_end_time, head_pose_angles = head_pose_estimation.predict(
+                    face, show_bbox=True
+                )
+                text = f"Head Pose Est. Inference time: {predict_end_time:.3f} s"
+                head_pose_estimation.add_text(
+                    text, frame, (15, video_feed.source_height - 40)
+                )
+                # print (f"head pose: {head_pose_angles}")
 
         if args.debug:
             video_feed.show(video_feed.resize(frame))
