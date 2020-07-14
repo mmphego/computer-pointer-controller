@@ -120,9 +120,7 @@ class Base(ABC):
                     self.exec_network.requests[request_id].outputs[output_name]
                 )
             predict_end_time = float(time.time() - predict_start_time) * 1000
-            bbox, _ = self.preprocess_output(
-                pred_result, image, show_bbox=show_bbox
-            )
+            bbox, _ = self.preprocess_output(pred_result, image, show_bbox=show_bbox)
             return (predict_end_time, bbox)
 
     @abstractmethod
@@ -337,8 +335,8 @@ class Head_Pose_Estimation(Base):
         """
         yaw, pitch, roll = coords.values()
 
-        pitch = pitch * np.pi / 180
         yaw = -(yaw * np.pi / 180)
+        pitch = pitch * np.pi / 180
         roll = roll * np.pi / 180
 
         height, width = image.shape[:2]
@@ -360,7 +358,7 @@ class Head_Pose_Estimation(Base):
         # Y-Axis | drawn in green
         #        v
         x2 = size * (-math.cos(yaw) * math.sin(roll)) + tdx
-        y2 = (
+        y2 = -(
             size
             * (
                 math.cos(pitch) * math.cos(roll)
