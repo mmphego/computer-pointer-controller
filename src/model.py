@@ -377,6 +377,25 @@ class Head_Pose_Estimation(Base):
 
         return image
 
+    @staticmethod
+    def show_text(
+        image, coords, pos=500, font_scale=1.5, color=(255, 255, 255), thickness=1
+    ):
+        """Helper function for showing the text on frame."""
+        height, _ = image.shape[:2]
+        ypos = abs(height - pos)
+        text = ", ".join(f"{x}: {y:.2f}" for x, y in coords.items())
+
+        cv2.putText(
+            image,
+            text,
+            (15, ypos),
+            fontFace=cv2.FONT_HERSHEY_PLAIN,
+            fontScale=font_scale,
+            color=color,
+            thickness=thickness,
+        )
+
 
 class Gaze_Estimation(Base):
     """Class for the Gaze Estimation Detection Model."""

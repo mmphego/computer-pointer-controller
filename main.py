@@ -176,6 +176,7 @@ def main(args):
                 predict_end_time, head_pose_angles = head_pose_estimation.predict(
                     face, show_bbox=True
                 )
+                head_pose_estimation.show_text(frame, head_pose_angles)
                 text = f"Head Pose Est. Inference time: {predict_end_time:.3f} s"
                 head_pose_estimation.add_text(
                     text, frame, (15, video_feed.source_height - 40)
