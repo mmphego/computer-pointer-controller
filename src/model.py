@@ -58,18 +58,11 @@ class Base(ABC):
         self.input_name = next(iter(self.model.inputs))
         self.input_shape = self.model.inputs[self.input_name].shape
         self.output_name = next(iter(self.model.outputs))
-        self._output_shape = None
         self.output_shape = self.model.outputs[self.output_name].shape
         self._init_image_w = source_width
         self._init_image_h = source_height
         self.exec_network = None
         self.load_model()
-
-    # @property
-    # def output_shape(self):
-    #     if not self._output_shape:
-    #         self._output_shape =
-    #     return self._output_shape
 
     def _get_model(self):
         """Helper function for reading the network."""
@@ -103,17 +96,17 @@ class Base(ABC):
                 f"Model: {self.model_structure} took {self._model_load_time:.3f} ms to load."
             )
 
-    def predict(self, image, request_id=0, show_bbox=False):
+    def predict(self, image, request_id=0, show_bbox=False, **kwargs):
         if not isinstance(image, np.ndarray):
             raise IOError("Image not parsed correctly.")
 
-        p_image = self.preprocess_input(image)
+        p_image = self.preprocess_input(image, **kwargs)
+        predict_start_time = time.time()
         self.exec_network.start_async(
             request_id=request_id, inputs={self.input_name: p_image}
         )
         status = self.exec_network.requests[request_id].wait(-1)
         if status == 0:
-            predict_start_time = time.time()
             pred_result = []
             for output_name, data_ptr in self.model.outputs.items():
                 pred_result.append(
@@ -124,7 +117,7 @@ class Base(ABC):
             return (predict_end_time, bbox)
 
     @abstractmethod
-    def preprocess_output(self, inference_results, image, show_bbox=False):
+    def preprocess_output(self, inference_results, image, show_bbox=False, **kwargs):
         """Draw bounding boxes onto the frame."""
         raise NotImplementedError("Please Implement this method")
 
@@ -261,13 +254,30 @@ class Facial_Landmarks(Base):
         h, w = image.shape[:2]
 
         left_eye_x_coord = int(eyes_coords[0] * w)
+        left_eye_xmin = left_eye_x_coord - 10
+        left_eye_xmax = left_eye_x_coord + 10
+
         left_eye_y_coord = int(eyes_coords[1] * h)
+        left_eye_ymin = left_eye_y_coord - 10
+        left_eye_ymax = left_eye_y_coord + 10
+
         right_eye_x_coord = int(eyes_coords[2] * w)
+        right_eye_xmin = right_eye_x_coord - 10
+        right_eye_xmax = right_eye_x_coord + 10
+
         right_eye_y_coord = int(eyes_coords[3] * h)
+        right_eye_ymin = right_eye_y_coord - 10
+        right_eye_ymax = right_eye_y_coord + 10
 
         eyes_coords = {
             "left_eye_point": (left_eye_x_coord, left_eye_y_coord),
             "right_eye_point": (right_eye_x_coord, right_eye_y_coord),
+            "left_eye_image": image[
+                left_eye_ymin:left_eye_ymax, left_eye_xmin:left_eye_xmax
+            ],
+            "right_eye_image": image[
+                right_eye_ymin:right_eye_ymax, right_eye_xmin:right_eye_xmax,
+            ],
         }
         if show_bbox:
             self.draw_output(image, eyes_coords)
@@ -277,7 +287,8 @@ class Facial_Landmarks(Base):
     def draw_output(image, eyes_coords, radius=10, color=(0, 0, 255), thickness=2):
         """Draw a circle around ROI"""
         for eye, coords in eyes_coords.items():
-            cv2.circle(image, (coords[0], coords[1]), radius, color, thickness)
+            if "point" in eye:
+                cv2.circle(image, (coords[0], coords[1]), radius, color, thickness)
 
 
 class Head_Pose_Estimation(Base):
@@ -413,9 +424,107 @@ class Gaze_Estimation(Base):
             model_name, source_width, source_height, device, threshold, extensions,
         )
 
-    def preprocess_output(self, inference_results, image, show_bbox):
-        pass
+    def preprocess_output(self, inference_results, image, show_bbox, **kwargs):
+        gaze_vector = dict(zip(["x", "y", "z"], np.vstack(inference_results).ravel()))
+
+        roll_val = kwargs["head_pose_angles"]["roll"]
+
+        cos_theta = math.cos(roll_val * math.pi / 180)
+        sin_theta = math.sin(roll_val * math.pi / 180)
+
+        coords = {"x": None, "y": None}
+        coords["x"] = gaze_vector["x"] * cos_theta + gaze_vector["y"] * sin_theta
+        coords["y"] = gaze_vector["y"] * cos_theta - gaze_vector["x"] * sin_theta
+        if show_bbox:
+            self.draw_output(gaze_vector, image, **kwargs)
+        return gaze_vector, coords, image
 
     @staticmethod
-    def draw_output(coords, image):
-        pass
+    def draw_output(coords, image, **kwargs):
+        left_eye_point = kwargs["eyes_coords"]["left_eye_point"]
+        right_eye_point = kwargs["eyes_coords"]["right_eye_point"]
+        print('here')
+        cv2.arrowedLine(
+            image,
+            (left_eye_point[0], left_eye_point[1]),
+            (
+                left_eye_point[0] + int(coords["x"] * 100),
+                left_eye_point[1] + int(-coords["y"] * 100),
+            ),
+            (0, 0, 255),
+            5,
+        )
+        cv2.arrowedLine(
+            image,
+            (right_eye_point[0], right_eye_point[1]),
+            (
+                right_eye_point[0] + int(coords["x"] * 100),
+                right_eye_point[1] + int(-coords["y"] * 100),
+            ),
+            (0, 0, 255),
+            5,
+        )
+
+    @staticmethod
+    def show_text(
+        image, coords, pos=550, font_scale=1.5, color=(255, 255, 255), thickness=1
+    ):
+        """Helper function for showing the text on frame."""
+        height, _ = image.shape[:2]
+        ypos = abs(height - pos)
+        text = ", ".join(f"{x}: {y:.2f}" for x, y in coords.items())
+
+        cv2.putText(
+            image,
+            text,
+            (15, ypos),
+            fontFace=cv2.FONT_HERSHEY_PLAIN,
+            fontScale=font_scale,
+            color=color,
+            thickness=thickness,
+        )
+
+    def preprocess_input(self, image, **kwargs):
+        def p_eye_image(which_eye, input_shape):
+
+            p_image = cv2.resize(image, (input_shape.shape[3], input_shape.shape[2]))
+            p_image = p_image.transpose((2, 0, 1))
+            p_image = p_image.reshape(1, *input_shape.shape)
+            return p_image
+
+        p_left_eye_image = p_eye_image(
+            kwargs["eyes_coords"]["left_eye_image"], self.model.inputs["left_eye_image"]
+        )
+        p_right_eye_image = p_eye_image(
+            kwargs["eyes_coords"]["right_eye_image"],
+            self.model.inputs["right_eye_image"],
+        )
+
+        return p_left_eye_image, p_right_eye_image
+
+    def predict(self, image, request_id=0, show_bbox=False, **kwargs):
+        p_left_eye_image, p_right_eye_image = self.preprocess_input(image, **kwargs)
+        head_pose_angles = list(kwargs.get("head_pose_angles").values())
+
+        predict_start_time = time.time()
+        status = self.exec_network.start_async(
+            request_id=request_id,
+            inputs={
+                "left_eye_image": p_left_eye_image,
+                "right_eye_image": p_right_eye_image,
+                "head_pose_angles": head_pose_angles,
+            },
+        )
+        status = self.exec_network.requests[request_id].wait(-1)
+
+        if status == 0:
+            pred_result = []
+            for output_name, data_ptr in self.model.outputs.items():
+                pred_result.append(
+                    self.exec_network.requests[request_id].outputs[output_name]
+                )
+            predict_end_time = float(time.time() - predict_start_time) * 1000
+            gaze_vector, coords, _ = self.preprocess_output(
+                pred_result, image, show_bbox=show_bbox, **kwargs
+            )
+        return (predict_end_time, gaze_vector, coords)

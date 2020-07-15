@@ -21,7 +21,7 @@ class MouseController:
     def move(self, x, y):
         """Move mouse pointer to position the x and y."""
         pyautogui.moveRel(
-            x * self.precision, -1 * y * self.precision, duration=self.speed
+            -x * self.precision, 1 * y * self.precision, duration=self.speed
         )
 
     def left_click(self):
