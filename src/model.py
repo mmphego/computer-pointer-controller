@@ -62,6 +62,7 @@ class Base(ABC):
         self._init_image_w = source_width
         self._init_image_h = source_height
         self.exec_network = None
+        self.perf_stats = {}
         self.load_model()
 
     def _get_model(self):
@@ -112,6 +113,9 @@ class Base(ABC):
                 pred_result.append(
                     self.exec_network.requests[request_id].outputs[output_name]
                 )
+            self.perf_stats[output_name] = self.exec_network.requests[
+                request_id
+            ].get_perf_counts()
             predict_end_time = float(time.time() - predict_start_time) * 1000
             bbox, _ = self.preprocess_output(pred_result, image, show_bbox=show_bbox)
             return (predict_end_time, bbox)

@@ -1,23 +1,8 @@
-"""
-USAGE
-
-xhost +; docker run --rm -ti \
---volume "$PWD":/app \
---env DISPLAY=$DISPLAY \
---volume="$HOME/.Xauthority":/root/.Xauthority \
---volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
---device /dev/video0 \
-mmphego/intel-openvino \
-    bash -c "source /opt/intel/openvino/bin/setupvars.sh && \
-        python main.py \
-            --face-model models/face-detection-adas-binary-0001 \
-            --facial-landmarks-model models/landmarks-regression-retail-0009 \
-            --head-pose-model models/head-pose-estimation-adas-0001 \
-            --gaze-model models/gaze-estimation-adas-0002 \
-            --input resources/demo.mp4";
-"""
+#!/usr/bin/env python3
 
 import argparse
+import time
+
 from loguru import logger
 
 from src.input_feeder import InputFeeder
@@ -73,21 +58,21 @@ def arg_parser():
         help="Specify the target device to infer on: "
         "CPU, GPU, FPGA or MYRIAD is acceptable. Sample "
         "will look for a suitable plugin for device "
-        "specified (CPU by default)",
+        "specified (Default: CPU)",
     )
     parser.add_argument(
         "-pt",
         "--prob_threshold",
         type=float,
         default=0.8,
-        help="Probability threshold for detections filtering" "(0.8 by default)",
+        help="Probability threshold for detections filtering" "(Default: 0.8)",
     )
     parser.add_argument(
         "-i",
         "--input",
         required=True,
         type=str,
-        help="Path to image or video file or 'cam' for Webcam.",
+        help="Path to image,  video file or 'cam' for Webcam.",
     )
     parser.add_argument(
         "--out", action="store_true", help="Write video to file.",
@@ -123,7 +108,6 @@ def arg_parser():
         action="store_true",
         help="Show bounding box and stats on screen [debugging].",
     )
-
     return parser.parse_args()
 
 
@@ -153,9 +137,9 @@ def main(args):
         + gaze_estimation._model_load_time
     ) / 1000
     logger.info(f"Total time taken to load all the models: {model_load_time:.2f} secs.")
-
+    count = 0
     for frame in video_feed.next_frame():
-
+        count +=1
         predict_end_time, face_bboxes = face_detection.predict(
             frame, show_bbox=args.show_bbox
         )
@@ -202,17 +186,27 @@ def main(args):
                     mouse_controller.move(gaze_vector["x"], gaze_vector["y"])
 
         if args.debug:
+            if face_bboxes:
+                text = f"Face Detection Inference time: {predict_end_time:.3f} s"
+                face_detection.add_text(
+                    text, frame, (15, video_feed.source_height - 80)
+                )
+                text = (
+                    f"Facial Landmarks Est. Inference time: "
+                    f"{facial_landmarks_pred_time:.3f} s"
+                )
+                facial_landmarks.add_text(
+                    text, frame, (15, video_feed.source_height - 60)
+                )
+                text = f"Head Pose Est. Inference time: {hp_est_pred_time:.3f} s"
+                head_pose_estimation.add_text(
+                    text, frame, (15, video_feed.source_height - 40)
+                )
+                text = f"Gaze Est. Inference time: {gaze_pred_time:.3f} s"
+                gaze_estimation.add_text(
+                    text, frame, (15, video_feed.source_height - 20)
+                )
             video_feed.show(video_feed.resize(frame))
-            text = f"Face Detection Inference time: {predict_end_time:.3f} s"
-            face_detection.add_text(text, frame, (15, video_feed.source_height - 80))
-            text = f"Facial Landmarks Est. Inference time: {facial_landmarks_pred_time:.3f} s"
-            facial_landmarks.add_text(text, frame, (15, video_feed.source_height - 60))
-            text = f"Head Pose Est. Inference time: {hp_est_pred_time:.3f} s"
-            head_pose_estimation.add_text(
-                text, frame, (15, video_feed.source_height - 40)
-            )
-            text = f"Gaze Est. Inference time: {gaze_pred_time:.3f} s"
-            gaze_estimation.add_text(text, frame, (15, video_feed.source_height - 20))
 
     video_feed.close()
 

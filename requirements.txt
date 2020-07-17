@@ -1,1 +1,6 @@
+loguru==0.4.1
+matplotlib==3.2.2
+numpy==1.19.0
 PyAutoGUI==0.9.50
+python3-xlib==0.15
+tqdm==4.47.0
