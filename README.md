@@ -80,11 +80,11 @@ tree && du -sh
 
 ### Setup and Installation
 There are two (2) ways of running the project.
-1) Download and install [Intel OpenVINO Toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html) and install.
+1. Download and install [Intel OpenVINO Toolkit](https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html) and install.
     - After you've cloned the repo, you need to install the dependecies using this command:
       `pip3 install -r requirements.txt`
 
-2) Run the project in the [Docker image](https://hub.docker.com/r/mmphego/intel-openvino) that I have baked Intel OpenVINO and dependencies in.
+2. Run the project in the [Docker image](https://hub.docker.com/r/mmphego/intel-openvino) that I have baked Intel OpenVINO and dependencies in.
   - Run: `docker pull mmphego/intel-openvino`
 
 Not sure what Docker is, [watch this](https://www.youtube.com/watch?v=rOTqprHv1YE)
@@ -93,7 +93,7 @@ For this project I used the latter method.
 
 #### Models Used
 I have already downloaded the Models, which are located in `./models/`.
-Should you wish to download your own models follow:
+Should you wish to download your own models run:
 
 ```bash
 MODEL_NAME=<<name of model to download>>
@@ -103,15 +103,14 @@ mmphego/intel-openvino \
 bash -c "\
   /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name $MODEL_NAME"
 ```
+
 Models used in this project:
 - [Face Detection Model](https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html)
 - [Facial Landmarks Detection Model](https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html)
 - [Head Pose Estimation Model](https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html)
 - [Gaze Estimation Model](https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html)
 
-## Documentation
-
-### Usage
+## Application Usage
 
 ```bash
 
@@ -154,6 +153,8 @@ optional arguments:
   --debug               Show output on screen [debugging].
   --show-bbox           Show bounding box and stats on screen [debugging].
 ```
+
+
 ### Example
 ```shell
 xvfb-run docker run --rm -ti \
@@ -181,7 +182,7 @@ bash -c "\
 ### Packaging the Application
 We can use the [Deployment Manager](https://docs.openvinotoolkit.org/latest/_docs_install_guides_deployment_manager_tool.html) present in OpenVINO to create a runtime package from our application. These packages can be easily sent to other hardware devices to be deployed.
 
-To deploy the application to various devices usinf the Deployment Manager run the steps below.
+To deploy the application to various devices using the Deployment Manager run the steps below.
 Note: Choose from the devices listed below.
 
 ```bash
@@ -197,32 +198,16 @@ mmphego/intel-openvino bash -c "\
 
 ```
 
-
-
-## Benchmarks
-*TODO:* Include the benchmark results of running your model on multiple hardwares and multiple model precisions. Your benchmarks can include: model loading time, input/output processing time, model inference time etc.
-
-## Results
-*TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
-
-## Stand Out Suggestions
-This is where you can provide information about the stand out suggestions that you have attempted.
-
-### Async Inference
-If you have used Async Inference in your code, benchmark the results and explain its effects on power and performance of your project.
-
 ## Edge Cases
 - Multiple People Scenario: If we encounter multiple people in the video frame, it will always use and give results one face even though multiple people detected,
 - No Head Detection: it will skip the frame and inform the user
 
-## Area of Improvement:
+## Future Improvement
 - [Intel® VTune™ Profiler](https://software.intel.com/content/www/us/en/develop/tools/vtune-profiler/choose-download.html): Profile my application and locate any bottlenecks.
-- Gaze estimations: We could revisit the logic of detemining and calculating the coordinates as it is a bit flaky.
+- Gaze estimations: We could revisit the logic of determining and calculating the coordinates as it is a bit flaky.
 - lighting condition: We might use HSV based pre-processing steps to minimize error due to different lighting conditions.
 
-
 ## Reference
-
 - [OpenCV Face Recognition](https://www.pyimagesearch.com/2018/09/24/opencv-face-recognition/)
 - [Tracking your eyes with Python](https://medium.com/@stepanfilonov/tracking-your-eyes-with-python-3952e66194a6)
 - [Real-time eye tracking using OpenCV and Dlib](https://towardsdatascience.com/real-time-eye-tracking-using-opencv-and-dlib-b504ca724ac6)

@@ -4,6 +4,7 @@ import argparse
 import time
 
 from loguru import logger
+from pprint import pprint
 
 from src.input_feeder import InputFeeder
 from src.model import (
@@ -101,12 +102,17 @@ def arg_parser():
         "--enable-mouse", action="store_true", help="Enable Mouse Movement",
     )
     parser.add_argument(
-        "--debug", action="store_true", help="Show output on screen [debugging].",
-    )
-    parser.add_argument(
         "--show-bbox",
         action="store_true",
         help="Show bounding box and stats on screen [debugging].",
+    )
+    parser.add_argument(
+        "--debug", action="store_true", help="Show output on screen [debugging].",
+    )
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Verbose OpenVINO layer performance stats [debugging].",
     )
     return parser.parse_args()
 
@@ -139,7 +145,7 @@ def main(args):
     logger.info(f"Total time taken to load all the models: {model_load_time:.2f} secs.")
     count = 0
     for frame in video_feed.next_frame():
-        count +=1
+        count += 1
         predict_end_time, face_bboxes = face_detection.predict(
             frame, show_bbox=args.show_bbox
         )
@@ -207,6 +213,12 @@ def main(args):
                     text, frame, (15, video_feed.source_height - 20)
                 )
             video_feed.show(video_feed.resize(frame))
+
+        if args.stats:
+            pprint(face_detection.perf_stats)
+            pprint(facial_landmarks.perf_stats)
+            pprint(head_pose_estimation.perf_stats)
+            pprint(gaze_estimation.perf_stats)
 
     video_feed.close()
 

@@ -34,6 +34,7 @@ class InputFeeder:
         """
         self.input_file = input_file
         assert isinstance(self.input_file, str)
+        self.check_file_exists(self.input_file)
         try:
             self._input_type, _ = mimetypes.guess_type(self.input_file)
             assert isinstance(self._input_type, str)
@@ -55,6 +56,14 @@ class InputFeeder:
             logger.warn(msg)
             raise FormatNotSupported(msg)
         logger.info(f"Loaded input source type: {self._input_type}")
+
+    @staticmethod
+    def check_file_exists(file):
+        if "cam" in file:
+            return
+
+        if not os.path.exists(os.path.abspath(file)):
+            raise FileNotFoundError(f"{file} does not exist.")
 
     @property
     def source_width(self):
