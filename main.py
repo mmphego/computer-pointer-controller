@@ -215,10 +215,13 @@ def main(args):
             video_feed.show(video_feed.resize(frame))
 
         if args.stats:
-            pprint(face_detection.perf_stats)
-            pprint(facial_landmarks.perf_stats)
-            pprint(head_pose_estimation.perf_stats)
-            pprint(gaze_estimation.perf_stats)
+            stats = {
+                "face_detection": face_detection.perf_stats,
+                "facial_landmarks": facial_landmarks.perf_stats,
+                "head_pose_estimation": head_pose_estimation.perf_stats,
+                "gaze_estimation": gaze_estimation.perf_stats,
+            }
+            pprint(stats)
 
     video_feed.close()
 

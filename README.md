@@ -22,8 +22,28 @@ The gaze estimation model used requires three inputs:
 To get these inputs, use the three other OpenVino models model below:
 
 - [Face Detection](https://docs.openvinotoolkit.org/latest/_models_intel_face_detection_adas_binary_0001_description_face_detection_adas_binary_0001.html)
-- [Head Pose Estimation](https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html)
+
+Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f13c6d2567c0856407db6c35b3fa6345f97c2/src/model.py#L156
+
+![face_Detection](https://user-images.githubusercontent.com/7910856/87830444-4a3bf080-c881-11ea-993a-7f76c979449f.gif)
+
 - [Facial Landmarks Detection](https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html).
+Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f13c6d2567c0856407db6c35b3fa6345f97c2/src/model.py#L239
+
+![facial_landmarks](https://user-images.githubusercontent.com/7910856/87830446-4c05b400-c881-11ea-90a5-d1b80d984f01.gif)
+
+- [Head Pose Estimation](https://docs.openvinotoolkit.org/latest/_models_intel_head_pose_estimation_adas_0001_description_head_pose_estimation_adas_0001.html)
+
+Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f13c6d2567c0856407db6c35b3fa6345f97c2/src/model.py#L305
+
+![head_pose](https://user-images.githubusercontent.com/7910856/87830450-4f00a480-c881-11ea-9d0b-4b43316456a2.gif)
+
+- [Gaze Estimation](https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html)
+
+Using the above outputs as inputs.
+Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f13c6d2567c0856407db6c35b3fa6345f97c2/src/model.py#L422
+
+![all](https://user-images.githubusercontent.com/7910856/87830436-47d99680-c881-11ea-8c22-6a0a7e17c78d.gif)
 
 ### Project Pipeline
 Coordinate the flow of data from the input, and then amongst the different models and finally to the mouse controller. The flow of data looks like this:
@@ -35,18 +55,6 @@ Coordinate the flow of data from the input, and then amongst the different model
 ![vide-demo](https://user-images.githubusercontent.com/7910856/87830451-50ca6800-c881-11ea-87cf-3943795a76e8.gif)
 
 
-### Gaze Estimates
-
-![all](https://user-images.githubusercontent.com/7910856/87830436-47d99680-c881-11ea-8c22-6a0a7e17c78d.gif)
-
-### Face Detection
-![face_Detection](https://user-images.githubusercontent.com/7910856/87830444-4a3bf080-c881-11ea-993a-7f76c979449f.gif)
-
-### Facial Landmark Estimates
-![facial_landmarks](https://user-images.githubusercontent.com/7910856/87830446-4c05b400-c881-11ea-90a5-d1b80d984f01.gif)
-
-### Head Pose Estimates
-![head_pose](https://user-images.githubusercontent.com/7910856/87830450-4f00a480-c881-11ea-9d0b-4b43316456a2.gif)
 
 ## Project Set Up and Installation
 
@@ -119,8 +127,8 @@ $ python main.py -h
 usage: main.py [-h] -fm FACE_MODEL -hp HEAD_POSE_MODEL -fl
                FACIAL_LANDMARKS_MODEL -gm GAZE_MODEL [-d DEVICE]
                [-pt PROB_THRESHOLD] -i INPUT [--out] [-mp [{high,low,medium}]]
-               [-ms [{fast,slow,medium}]] [--enable-mouse] [--debug]
-               [--show-bbox]
+               [-ms [{fast,slow,medium}]] [--enable-mouse] [--show-bbox]
+               [--debug] [--stats]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -136,12 +144,12 @@ optional arguments:
   -d DEVICE, --device DEVICE
                         Specify the target device to infer on: CPU, GPU, FPGA
                         or MYRIAD is acceptable. Sample will look for a
-                        suitable plugin for device specified (CPU by default)
+                        suitable plugin for device specified (Default: CPU)
   -pt PROB_THRESHOLD, --prob_threshold PROB_THRESHOLD
-                        Probability threshold for detections filtering(0.8 by
-                        default)
+                        Probability threshold for detections
+                        filtering(Default: 0.8)
   -i INPUT, --input INPUT
-                        Path to image or video file or 'cam' for Webcam.
+                        Path to image, video file or 'cam' for Webcam.
   --out                 Write video to file.
   -mp [{high,low,medium}], --mouse-precision [{high,low,medium}]
                         The precision for mouse movement (how much the mouse
@@ -150,14 +158,16 @@ optional arguments:
                         The speed (how fast it moves) by changing [Default:
                         fast]
   --enable-mouse        Enable Mouse Movement
-  --debug               Show output on screen [debugging].
   --show-bbox           Show bounding box and stats on screen [debugging].
+  --debug               Show output on screen [debugging].
+  --stats               Verbose OpenVINO layer performance stats [debugging].
 ```
 
 
 ### Example
 ```shell
-xvfb-run docker run --rm -ti \
+xhost +;
+docker run --rm -ti \
 --volume "$PWD":/app \
 --env DISPLAY=$DISPLAY \
 --volume=$HOME/.Xauthority:/root/.Xauthority \
@@ -196,6 +206,29 @@ mmphego/intel-openvino bash -c "\
   --output_dir . \
   --archive_name computer_pointer_controller_${DEVICE}"
 
+```
+
+## OpenVino API for Layer Analysis
+Queries performance measures per layer to get feedback of what is the most time consuming layer: [Read docs.](https://docs.openvinotoolkit.org/latest/ie_python_api/classie__api_1_1InferRequest.html#a2194bc8c557868822bbfd260e8ef1a08)
+
+```shell
+xhost +;
+docker run --rm -ti \
+--volume "$PWD":/app \
+--env DISPLAY=$DISPLAY \
+--volume=$HOME/.Xauthority:/root/.Xauthority \
+--volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+--device /dev/video0 \
+mmphego/intel-openvino \
+bash -c "\
+    source /opt/intel/openvino/bin/setupvars.sh && \
+    python main.py \
+        --face-model models/face-detection-adas-binary-0001 \
+        --head-pose-model models/head-pose-estimation-adas-0001 \
+        --facial-landmarks-model models/landmarks-regression-retail-0009 \
+        --gaze-model models/gaze-estimation-adas-0002 \
+        --input resources/demo.mp4 \
+        --stat"
 ```
 
 ## Edge Cases
