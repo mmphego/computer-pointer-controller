@@ -164,7 +164,9 @@ optional arguments:
 ```
 
 
-### Example
+### Usage Example
+In order to run the application run the following code (Assuming you have docker installed.):
+
 ```shell
 xhost +;
 docker run --rm -ti \
@@ -185,7 +187,7 @@ bash -c "\
         --debug \
         --show-bbox \
         --enable-mouse \
-        --mouse-precision high \
+        --mouse-precision low \
         --mouse-speed fast"
 ```
 
