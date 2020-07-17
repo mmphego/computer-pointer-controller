@@ -97,14 +97,20 @@ def arg_parser():
         "--mouse-precision",
         type=str,
         default="low",
-        help="The precision for mouse movement (how much the mouse moves).",
+        const="low",
+        nargs="?",
+        choices=["high", "low", "medium"],
+        help="The precision for mouse movement (how much the mouse moves). [Default: low]",
     )
     parser.add_argument(
         "-ms",
         "--mouse-speed",
         type=str,
         default="fast",
-        help="The speed (how fast it moves) by changing",
+        const="fast",
+        nargs="?",
+        choices=["fast", "slow", "medium"],
+        help="The speed (how fast it moves) by changing [Default: fast]",
     )
     parser.add_argument(
         "--enable-mouse", action="store_true", help="Enable Mouse Movement",
@@ -113,7 +119,9 @@ def arg_parser():
         "--debug", action="store_true", help="Show output on screen [debugging].",
     )
     parser.add_argument(
-        "--show-bbox", action="store_true", help="Show bounding box and stats on screen [debugging].",
+        "--show-bbox",
+        action="store_true",
+        help="Show bounding box and stats on screen [debugging].",
     )
 
     return parser.parse_args()
@@ -148,7 +156,9 @@ def main(args):
 
     for frame in video_feed.next_frame():
 
-        predict_end_time, face_bboxes = face_detection.predict(frame, show_bbox=args.show_bbox)
+        predict_end_time, face_bboxes = face_detection.predict(
+            frame, show_bbox=args.show_bbox
+        )
 
         if face_bboxes:
             for face_bbox in face_bboxes:
@@ -163,7 +173,7 @@ def main(args):
                 (x, y, w, h) = face_bbox
                 face = frame[y:h, x:w]
                 (face_height, face_width) = face.shape[:2]
-                #  video_feed.show(frame[y:h, x:w], "face")
+                # video_feed.show(frame[y:h, x:w], "face")
 
                 # ensure the face width and height are sufficiently large
                 if face_height < 20 or face_width < 20:
@@ -188,9 +198,9 @@ def main(args):
                     head_pose_estimation.show_text(frame, head_pose_angles)
                     gaze_estimation.show_text(frame, gaze_vector)
 
-                print(f"gaze_vector: {gaze_vector}")
+                print(f"gaze_vector: x: {gaze_vector['x']:.2f}, y: {gaze_vector['y']:.2f}")
                 if args.enable_mouse:
-                    mouse_controller.move(gaze_vector['x'], gaze_vector['y'])
+                    mouse_controller.move(gaze_vector["x"], gaze_vector["y"])
 
         if args.debug:
             video_feed.show(video_feed.resize(frame))

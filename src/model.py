@@ -254,22 +254,23 @@ class Facial_Landmarks(Base):
         flattened_predictions = np.vstack(inference_results).ravel()
         eyes_coords = flattened_predictions[:4]
         h, w = image.shape[:2]
+        eye_size = 10
 
         left_eye_x_coord = int(eyes_coords[0] * w)
-        left_eye_xmin = left_eye_x_coord - 10
-        left_eye_xmax = left_eye_x_coord + 10
+        left_eye_xmin = left_eye_x_coord - eye_size
+        left_eye_xmax = left_eye_x_coord + eye_size
 
         left_eye_y_coord = int(eyes_coords[1] * h)
-        left_eye_ymin = left_eye_y_coord - 10
-        left_eye_ymax = left_eye_y_coord + 10
+        left_eye_ymin = left_eye_y_coord - eye_size
+        left_eye_ymax = left_eye_y_coord + eye_size
 
         right_eye_x_coord = int(eyes_coords[2] * w)
-        right_eye_xmin = right_eye_x_coord - 10
-        right_eye_xmax = right_eye_x_coord + 10
+        right_eye_xmin = right_eye_x_coord - eye_size
+        right_eye_xmax = right_eye_x_coord + eye_size
 
         right_eye_y_coord = int(eyes_coords[3] * h)
-        right_eye_ymin = right_eye_y_coord - 10
-        right_eye_ymax = right_eye_y_coord + 10
+        right_eye_ymin = right_eye_y_coord - eye_size
+        right_eye_ymax = right_eye_y_coord + eye_size
 
         eyes_coords = {
             "left_eye_point": (left_eye_x_coord, left_eye_y_coord),
@@ -286,7 +287,7 @@ class Facial_Landmarks(Base):
         return eyes_coords, image
 
     @staticmethod
-    def draw_output(image, eyes_coords, radius=10, color=(0, 0, 255), thickness=2):
+    def draw_output(image, eyes_coords, radius=20, color=(0, 0, 255), thickness=2):
         """Draw a circle around ROI"""
         for eye, coords in eyes_coords.items():
             if "point" in eye:
@@ -445,12 +446,11 @@ class Gaze_Estimation(Base):
     def draw_output(coords, image, **kwargs):
         left_eye_point = kwargs["eyes_coords"]["left_eye_point"]
         right_eye_point = kwargs["eyes_coords"]["right_eye_point"]
-        print(left_eye_point)
         cv2.arrowedLine(
             image,
             (
                 left_eye_point[0] + int(coords["x"] * 500),
-                left_eye_point[1] + int(-coords["y"] * 500),
+                left_eye_point[1] - int(coords["y"] * 500),
             ),
             (left_eye_point[0], left_eye_point[1]),
             color=(0, 0, 255),
@@ -461,7 +461,7 @@ class Gaze_Estimation(Base):
             image,
             (
                 right_eye_point[0] + int(coords["x"] * 500),
-                right_eye_point[1] + int(-coords["y"] * 500),
+                right_eye_point[1] - int(coords["y"] * 500),
             ),
             (right_eye_point[0], right_eye_point[1]),
             color=(0, 0, 255),
