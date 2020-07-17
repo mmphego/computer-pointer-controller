@@ -257,18 +257,22 @@ class Facial_Landmarks(Base):
         eye_size = 10
 
         left_eye_x_coord = int(eyes_coords[0] * w)
+        # left eye offset of face
         left_eye_xmin = left_eye_x_coord - eye_size
         left_eye_xmax = left_eye_x_coord + eye_size
 
         left_eye_y_coord = int(eyes_coords[1] * h)
+        # left eye offset of face
         left_eye_ymin = left_eye_y_coord - eye_size
         left_eye_ymax = left_eye_y_coord + eye_size
 
         right_eye_x_coord = int(eyes_coords[2] * w)
+        # right eye offset of face
         right_eye_xmin = right_eye_x_coord - eye_size
         right_eye_xmax = right_eye_x_coord + eye_size
 
         right_eye_y_coord = int(eyes_coords[3] * h)
+        # right eye offset of face
         right_eye_ymin = right_eye_y_coord - eye_size
         right_eye_ymax = right_eye_y_coord + eye_size
 

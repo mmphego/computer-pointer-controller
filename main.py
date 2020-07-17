@@ -198,7 +198,6 @@ def main(args):
                     head_pose_estimation.show_text(frame, head_pose_angles)
                     gaze_estimation.show_text(frame, gaze_vector)
 
-                print(f"gaze_vector: x: {gaze_vector['x']:.2f}, y: {gaze_vector['y']:.2f}")
                 if args.enable_mouse:
                     mouse_controller.move(gaze_vector["x"], gaze_vector["y"])
 

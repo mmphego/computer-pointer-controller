@@ -25,14 +25,14 @@ class MouseController:
         try:
             start_pos = pyautogui.position()
             pyautogui.moveRel(
-                -x * self.precision, y * self.precision, duration=self.speed
+                -x * self.precision/2., y * self.precision/2., duration=self.speed
             )
             end_pos = pyautogui.position()
-            logger.info(f"Mouse -> start_pos: {start_pos}, end_pos: {end_pos}")
+            logger.debug(f"Mouse -> start_pos: {start_pos}, end_pos: {end_pos}")
         except pyautogui.FailSafeException:
             logger.exception(f"Position: {x}, {y} are out of the screen")
             pyautogui.moveRel(
-                x * self.precision, -1 * y * self.precision, duration=self.speed
+                -x * self.precision, y * self.precision, duration=self.speed
             )
     def left_click(self):
         pass
