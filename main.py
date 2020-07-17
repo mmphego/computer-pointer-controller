@@ -190,6 +190,9 @@ def main(args):
 
                 if args.enable_mouse:
                     mouse_controller.move(gaze_vector["x"], gaze_vector["y"])
+        else:
+            if count % 10 ==0:
+                logger.warning("Could not detect face in the frame.")
 
         if args.debug:
             if face_bboxes:

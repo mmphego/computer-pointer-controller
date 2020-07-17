@@ -28,6 +28,7 @@ Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f
 ![face_Detection](https://user-images.githubusercontent.com/7910856/87830444-4a3bf080-c881-11ea-993a-7f76c979449f.gif)
 
 - [Facial Landmarks Detection](https://docs.openvinotoolkit.org/latest/_models_intel_landmarks_regression_retail_0009_description_landmarks_regression_retail_0009.html).
+
 Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f13c6d2567c0856407db6c35b3fa6345f97c2/src/model.py#L239
 
 ![facial_landmarks](https://user-images.githubusercontent.com/7910856/87830446-4c05b400-c881-11ea-90a5-d1b80d984f01.gif)
@@ -40,7 +41,6 @@ Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f
 
 - [Gaze Estimation](https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html)
 
-Using the above outputs as inputs.
 Implementation: https://github.com/mmphego/computer-pointer-controller/blob/bb5f13c6d2567c0856407db6c35b3fa6345f97c2/src/model.py#L422
 
 ![all](https://user-images.githubusercontent.com/7910856/87830436-47d99680-c881-11ea-8c22-6a0a7e17c78d.gif)
@@ -233,12 +233,13 @@ bash -c "\
 
 ## Edge Cases
 - Multiple People Scenario: If we encounter multiple people in the video frame, it will always use and give results one face even though multiple people detected,
-- No Head Detection: it will skip the frame and inform the user
+- No Face Detection: it will skip the frame and inform the user
 
 ## Future Improvement
+- [Intel® DevCloud](https://devcloud.intel.com/edge/get_started/guide/): Benchmark the application on various devices to ensure optimum perfomance.
 - [Intel® VTune™ Profiler](https://software.intel.com/content/www/us/en/develop/tools/vtune-profiler/choose-download.html): Profile my application and locate any bottlenecks.
 - Gaze estimations: We could revisit the logic of determining and calculating the coordinates as it is a bit flaky.
-- lighting condition: We might use HSV based pre-processing steps to minimize error due to different lighting conditions.
+- Lighting condition: We might use HSV based pre-processing steps to minimize error due to different lighting conditions.
 
 ## Reference
 - [OpenCV Face Recognition](https://www.pyimagesearch.com/2018/09/24/opencv-face-recognition/)
