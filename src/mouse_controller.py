@@ -1,6 +1,8 @@
 import Xlib.display
 import pyautogui
 
+from loguru import logger
+
 
 class MouseController:
     """
@@ -20,10 +22,18 @@ class MouseController:
 
     def move(self, x, y):
         """Move mouse pointer to position the x and y."""
-        pyautogui.moveRel(
-            -x * self.precision, 1 * y * self.precision, duration=self.speed
-        )
-
+        try:
+            start_pos = pyautogui.position()
+            pyautogui.moveRel(
+                x * self.precision, -1 * y * self.precision, duration=self.speed
+            )
+            end_pos = pyautogui.position()
+            logger.info(f"Mouse -> start_pos: {start_pos}, end_pos: {end_pos}")
+        except pyautogui.FailSafeException:
+            logger.exception(f"Position: {x}, {y} are out of the screen")
+            pyautogui.moveRel(
+                -x * self.precision, 1 * y * self.precision, duration=self.speed
+            )
     def left_click(self):
         pass
 

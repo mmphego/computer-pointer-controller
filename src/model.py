@@ -138,9 +138,11 @@ class Base(ABC):
             image, text, position, cv2.FONT_HERSHEY_COMPLEX, font_size, color, 1,
         )
 
-    def preprocess_input(self, image):
+    def preprocess_input(self, image, height=None, width=None):
         """Helper function for processing frame"""
-        p_frame = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
+        if (height and width) is None:
+            height, width = self.input_shape[2:]
+        p_frame = cv2.resize(image, (width, height))
         # Change data layout from HWC to CHW
         p_frame = p_frame.transpose((2, 0, 1))
         p_frame = p_frame.reshape(1, *p_frame.shape)
@@ -427,42 +429,44 @@ class Gaze_Estimation(Base):
     def preprocess_output(self, inference_results, image, show_bbox, **kwargs):
         gaze_vector = dict(zip(["x", "y", "z"], np.vstack(inference_results).ravel()))
 
-        roll_val = kwargs["head_pose_angles"]["roll"]
+        # roll_val = kwargs["head_pose_angles"]["roll"]
 
-        cos_theta = math.cos(roll_val * math.pi / 180)
-        sin_theta = math.sin(roll_val * math.pi / 180)
+        # cos_theta = math.cos(roll_val * math.pi / 180)
+        # sin_theta = math.sin(roll_val * math.pi / 180)
 
-        coords = {"x": None, "y": None}
-        coords["x"] = gaze_vector["x"] * cos_theta + gaze_vector["y"] * sin_theta
-        coords["y"] = gaze_vector["y"] * cos_theta - gaze_vector["x"] * sin_theta
+        # coords = {"x": None, "y": None}
+        # coords["x"] = gaze_vector["x"] * cos_theta + gaze_vector["y"] * sin_theta
+        # coords["y"] = gaze_vector["y"] * cos_theta - gaze_vector["x"] * sin_theta
         if show_bbox:
             self.draw_output(gaze_vector, image, **kwargs)
-        return gaze_vector, coords, image
+        return gaze_vector, image
 
     @staticmethod
     def draw_output(coords, image, **kwargs):
         left_eye_point = kwargs["eyes_coords"]["left_eye_point"]
         right_eye_point = kwargs["eyes_coords"]["right_eye_point"]
-        print('here')
+        print(left_eye_point)
         cv2.arrowedLine(
             image,
-            (left_eye_point[0], left_eye_point[1]),
             (
-                left_eye_point[0] + int(coords["x"] * 100),
-                left_eye_point[1] + int(-coords["y"] * 100),
+                left_eye_point[0] + int(coords["x"] * 500),
+                left_eye_point[1] + int(-coords["y"] * 500),
             ),
-            (0, 0, 255),
-            5,
+            (left_eye_point[0], left_eye_point[1]),
+            color=(0, 0, 255),
+            thickness=2,
+            tipLength=0.2,
         )
         cv2.arrowedLine(
             image,
-            (right_eye_point[0], right_eye_point[1]),
             (
-                right_eye_point[0] + int(coords["x"] * 100),
-                right_eye_point[1] + int(-coords["y"] * 100),
+                right_eye_point[0] + int(coords["x"] * 500),
+                right_eye_point[1] + int(-coords["y"] * 500),
             ),
-            (0, 0, 255),
-            5,
+            (right_eye_point[0], right_eye_point[1]),
+            color=(0, 0, 255),
+            thickness=2,
+            tipLength=0.2,
         )
 
     @staticmethod
@@ -472,8 +476,7 @@ class Gaze_Estimation(Base):
         """Helper function for showing the text on frame."""
         height, _ = image.shape[:2]
         ypos = abs(height - pos)
-        text = ", ".join(f"{x}: {y:.2f}" for x, y in coords.items())
-
+        text = "Gaze Vector: " + ", ".join(f"{x}: {y:.2f}" for x, y in coords.items())
         cv2.putText(
             image,
             text,
@@ -485,19 +488,13 @@ class Gaze_Estimation(Base):
         )
 
     def preprocess_input(self, image, **kwargs):
-        def p_eye_image(which_eye, input_shape):
+        width, height = self.model.inputs["left_eye_image"].shape[2:]
 
-            p_image = cv2.resize(image, (input_shape.shape[3], input_shape.shape[2]))
-            p_image = p_image.transpose((2, 0, 1))
-            p_image = p_image.reshape(1, *input_shape.shape)
-            return p_image
-
-        p_left_eye_image = p_eye_image(
-            kwargs["eyes_coords"]["left_eye_image"], self.model.inputs["left_eye_image"]
+        p_left_eye_image = Base.preprocess_input(
+            Base, kwargs["eyes_coords"]["left_eye_image"], width, height
         )
-        p_right_eye_image = p_eye_image(
-            kwargs["eyes_coords"]["right_eye_image"],
-            self.model.inputs["right_eye_image"],
+        p_right_eye_image = Base.preprocess_input(
+            Base, kwargs["eyes_coords"]["right_eye_image"], width, height
         )
 
         return p_left_eye_image, p_right_eye_image
@@ -524,7 +521,7 @@ class Gaze_Estimation(Base):
                     self.exec_network.requests[request_id].outputs[output_name]
                 )
             predict_end_time = float(time.time() - predict_start_time) * 1000
-            gaze_vector, coords, _ = self.preprocess_output(
+            gaze_vector, _ = self.preprocess_output(
                 pred_result, image, show_bbox=show_bbox, **kwargs
             )
-        return (predict_end_time, gaze_vector, coords)
+        return (predict_end_time, gaze_vector)

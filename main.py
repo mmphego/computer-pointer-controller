@@ -107,7 +107,13 @@ def arg_parser():
         help="The speed (how fast it moves) by changing",
     )
     parser.add_argument(
+        "--enable-mouse", action="store_true", help="Enable Mouse Movement",
+    )
+    parser.add_argument(
         "--debug", action="store_true", help="Show output on screen [debugging].",
+    )
+    parser.add_argument(
+        "--show-bbox", action="store_true", help="Show bounding box and stats on screen [debugging].",
     )
 
     return parser.parse_args()
@@ -142,7 +148,7 @@ def main(args):
 
     for frame in video_feed.next_frame():
 
-        predict_end_time, face_bboxes = face_detection.predict(frame, show_bbox=True)
+        predict_end_time, face_bboxes = face_detection.predict(frame, show_bbox=args.show_bbox)
 
         if face_bboxes:
             for face_bbox in face_bboxes:
@@ -164,16 +170,16 @@ def main(args):
                     continue
 
                 facial_landmarks_pred_time, eyes_coords = facial_landmarks.predict(
-                    face, show_bbox=True
+                    face, show_bbox=args.show_bbox
                 )
 
                 hp_est_pred_time, head_pose_angles = head_pose_estimation.predict(
-                    face, show_bbox=True
+                    face, show_bbox=args.show_bbox
                 )
 
-                gaze_pred_time, gaze_vector, coords_xy = gaze_estimation.predict(
+                gaze_pred_time, gaze_vector = gaze_estimation.predict(
                     frame,
-                    show_bbox=True,
+                    show_bbox=args.show_bbox,
                     face=face,
                     eyes_coords=eyes_coords,
                     head_pose_angles=head_pose_angles,
@@ -182,9 +188,12 @@ def main(args):
                     head_pose_estimation.show_text(frame, head_pose_angles)
                     gaze_estimation.show_text(frame, gaze_vector)
 
-                mouse_controller.move(coords_xy['x'],coords_xy['y'])
+                print(f"gaze_vector: {gaze_vector}")
+                if args.enable_mouse:
+                    mouse_controller.move(gaze_vector['x'], gaze_vector['y'])
 
         if args.debug:
+            video_feed.show(video_feed.resize(frame))
             text = f"Face Detection Inference time: {predict_end_time:.3f} s"
             face_detection.add_text(text, frame, (15, video_feed.source_height - 80))
             text = f"Facial Landmarks Est. Inference time: {facial_landmarks_pred_time:.3f} s"
@@ -195,7 +204,6 @@ def main(args):
             )
             text = f"Gaze Est. Inference time: {gaze_pred_time:.3f} s"
             gaze_estimation.add_text(text, frame, (15, video_feed.source_height - 20))
-            video_feed.show(video_feed.resize(frame))
 
     video_feed.close()
 
