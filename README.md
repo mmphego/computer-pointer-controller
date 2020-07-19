@@ -109,7 +109,8 @@ docker run --rm -ti \
 --volume "$PWD":/app \
 mmphego/intel-openvino \
 bash -c "\
-  /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name $MODEL_NAME"
+    /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py \
+    --name ${MODEL_NAME}"
 ```
 
 Models used in this project:
@@ -195,6 +196,7 @@ bash -c "\
 We can use the [Deployment Manager](https://docs.openvinotoolkit.org/latest/_docs_install_guides_deployment_manager_tool.html) present in OpenVINO to create a runtime package from our application. These packages can be easily sent to other hardware devices to be deployed.
 
 To deploy the application to various devices using the Deployment Manager run the steps below.
+
 Note: Choose from the devices listed below.
 
 ```bash
