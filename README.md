@@ -8,7 +8,7 @@
 | Hardware Used: | Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz |
 | Device: | CPU |
 
-In this project, I used an Intel® OpenVINO [Gaze Detection model](https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html) to control the mouse pointer of my computer. Using the Gaze Estimation model to estimate the gaze of the user's eyes and change the mouse pointer position accordingly. This project demonstrates the ability of running multiple models in the same machine and coordinate the flow of data between those models.
+In this project 3 of [3](https://github.com/mmphego/Udacity-EdgeAI), I used an Intel® OpenVINO [Gaze Detection model](https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html) to control the mouse pointer of my computer. Using the Gaze Estimation model to estimate the gaze of the user's eyes and change the mouse pointer position accordingly. This project demonstrates the ability of running multiple models in the same machine and coordinate the flow of data between those models.
 
 ## How It Works
 Used the Inference Engine API from Intel's OpenVino ToolKit to build the project.
