@@ -8,6 +8,7 @@
 | Docker (Ubuntu OpenVINO pre-installed): | [mmphego/intel-openvino](https://hub.docker.com/r/mmphego/intel-openvino)|
 | Hardware Used: | Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz |
 | Device: | CPU |
+| Blog Post | [![blogpost](https://img.shields.io/badge/BlogPost-Link-brightgreen)](https://blog.mphomphego.co.za/blog/2020/07/18/How-I-deployed-a-Computer-Pointer-Controller-using-Gaze-Estimation.html) |
 | Visitors | ![](https://visitor-badge.laobi.icu/badge?page_id=mmphego.computer-pointer-controller)|
 
 In this project 3 of [3](https://github.com/mmphego/Udacity-EdgeAI), I used an Intel® OpenVINO [Gaze Detection model](https://docs.openvinotoolkit.org/latest/_models_intel_gaze_estimation_adas_0002_description_gaze_estimation_adas_0002.html) to control the mouse pointer of my computer. Using the Gaze Estimation model to estimate the gaze of the user's eyes and change the mouse pointer position accordingly. This project demonstrates the ability of running multiple models in the same machine and coordinate the flow of data between those models.
