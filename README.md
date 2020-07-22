@@ -208,7 +208,7 @@ docker run --rm -ti \
 --volume "$PWD":/app \
 mmphego/intel-openvino bash -c "\
   python /opt/intel/openvino/deployment_tools/tools/deployment_manager/deployment_manager.py \
-  --targets cpu \
+  --targets ${DEVICE} \
   --user_data /app \
   --output_dir . \
   --archive_name computer_pointer_controller_${DEVICE}"
